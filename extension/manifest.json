@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Proactive Phishing Defense",
+  "version": "1.0",
+  "description": "A browser extension that uses a multi-modal AI system to detect and block phishing threats in real-time.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

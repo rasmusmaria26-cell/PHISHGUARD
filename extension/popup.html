@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="popup.css" />
+  <title>Phishing Guard</title>
+</head>
+<body>
+  <div id="root" class="card">
+    <header class="header">
+      <h1>Phishing Guard</h1>
+      <div id="status" class="status">Ready</div>
+    </header>
+
+    <main>
+      <button id="analyze" class="btn">Analyze current page</button>
+
+      <div id="resultArea" class="hidden">
+        <div class="score-row">
+          <div class="score-left">
+            <div class="progress-wrap">
+              <div id="bar" class="progress-bar"><div id="bar-fill" class="progress-fill"></div></div>
+            </div>
+            <div id="score" class="big-score">—</div>
+            <div id="verdict" class="verdict neutral">—</div>
+          </div>
+
+          <div class="score-right">
+            <div><strong>URL:</strong> <span id="url-score">n/a</span></div>
+            <div><strong>Content:</strong> <span id="content-score">n/a</span></div>
+          </div>
+        </div>
+
+        <section class="reasons">
+          <h3>Reasons</h3>
+          <ul id="reasonsList"><li>No data yet.</li></ul>
+        </section>
+
+        <div id="raw" class="raw hidden"></div>
+      </div>
+
+      <div id="error" class="error hidden"></div>
+    </main>
+
+    <footer class="footer">
+      <small>v1.0 — Local dev</small>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
