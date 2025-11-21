@@ -1,4 +1,4 @@
-// popup.js - improved UI feedback
+// popup.js - Cyberpunk UI Logic + Kill Switch
 const analyzeBtn = document.getElementById('analyze');
 const statusEl = document.getElementById('status');
 const resultArea = document.getElementById('resultArea');
@@ -25,10 +25,11 @@ function colorForScore(s){
 function setProgress(score){
   const pct = Math.max(0, Math.min(100, score));
   barFill.style.width = pct + '%';
-  // color fill
+  
+  // Dynamic color fill based on score
   if(pct >= 70) barFill.style.background = getComputedStyle(document.documentElement).getPropertyValue('--danger');
   else if(pct >= 35) barFill.style.background = getComputedStyle(document.documentElement).getPropertyValue('--warn');
-  else barFill.style.background = getComputedStyle(document.documentElement).getPropertyValue('--ok');
+  else barFill.style.background = getComputedStyle(document.documentElement).getPropertyValue('--safe');
 }
 
 function showResult(data){
@@ -36,39 +37,89 @@ function showResult(data){
   errorEl.classList.add('hidden');
 
   scoreEl.textContent = data.score ?? '—';
-  urlScoreEl.textContent = data.url_score ?? 'n/a';
-  contentScoreEl.textContent = data.content_score ?? 'n/a';
+  urlScoreEl.textContent = data.url_score ?? '0';
+  contentScoreEl.textContent = data.content_score ?? '0';
   setProgress(data.score ?? 0);
 
-  // verdict styling
+  // Verdict styling
   const v = (data.verdict || 'neutral');
   verdictEl.textContent = v.toUpperCase();
   verdictEl.className = 'verdict ' + (v === 'safe' ? 'safe' : v === 'suspicious' ? 'suspicious' : v === 'danger' ? 'danger' : 'neutral');
 
-  // reasons list
+  // --- IMPROVED REASONS LOGIC (The Chips) ---
   const reasons = Array.isArray(data.reasons) ? data.reasons : (data.reasons ? [data.reasons] : []);
   reasonsList.innerHTML = '';
+
   if(reasons.length === 0) {
-    reasonsList.innerHTML = '<li>None</li>';
+    reasonsList.innerHTML = '<li>No suspicious indicators found.</li>';
   } else {
     for(const r of reasons) {
       const li = document.createElement('li');
-      li.textContent = r;
+
+      // Check if this is the keyword list that needs formatting
+      // Matches "Suspicious keywords: ..." or "Suspicious text: ..."
+      if (typeof r === 'string' && (r.includes("Suspicious keywords:") || r.includes("Suspicious text:"))) {
+        
+        // 1. Create Title Label
+        const titleDiv = document.createElement("div");
+        titleDiv.className = "reason-title";
+        titleDiv.textContent = "DETECTED TRIGGERS:";
+        li.appendChild(titleDiv);
+
+        // 2. Create Container for Chips
+        const chipContainer = document.createElement("div");
+        chipContainer.className = "chip-container";
+
+        // 3. Clean the string and split by comma
+        let cleanText = r.replace("Suspicious keywords:", "").replace("Suspicious text:", "").trim();
+        let keywords = cleanText.split(",");
+
+        // 4. Create a chip for each word
+        keywords.forEach(word => {
+            word = word.trim();
+            if(word && word !== "none") {
+                const span = document.createElement("span");
+                span.className = "keyword-chip";
+                span.textContent = word;
+                chipContainer.appendChild(span);
+            }
+        });
+
+        li.appendChild(chipContainer);
+
+      } else {
+        // Regular text reason
+        li.textContent = r;
+      }
+
       reasonsList.appendChild(li);
     }
   }
 
-  // raw (hidden by default)
+  // Raw debug info (hidden)
   rawEl.textContent = JSON.stringify(data, null, 2);
   rawEl.classList.add('hidden');
+
+  // --- KILL SWITCH LOGIC (Redirect to Warning Page) ---
+  if (data.score >= 60 || data.verdict === 'Phishing') {
+      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+          if(tabs[0]) {
+              // Redirect to local warning.html with parameters
+              const safePage = chrome.runtime.getURL("warning.html") + 
+                               `?score=${data.score}&verdict=${data.verdict}&ref=${encodeURIComponent(tabs[0].url)}`;
+              
+              chrome.tabs.update(tabs[0].id, { url: safePage });
+          }
+      });
+  }
 }
 
 function showError(err){
   errorEl.textContent = String(err);
   errorEl.classList.remove('hidden');
-  setStatus('Error — see console');
-  resultArea.classList.remove('hidden'); // keep UI visible
-  scoreEl.textContent = '—';
+  setStatus('System Error');
+  resultArea.classList.remove('hidden'); 
+  scoreEl.textContent = 'ERR';
   verdictEl.textContent = 'ERROR';
   verdictEl.className = 'verdict neutral';
   barFill.style.width = '0%';
@@ -76,18 +127,20 @@ function showError(err){
 
 analyzeBtn.addEventListener('click', async () => {
   try {
-    setStatus('Getting active tab...');
+    setStatus('Accessing page content...');
     resultArea.classList.add('hidden');
     errorEl.classList.add('hidden');
 
+    // 1. Get Active Tab
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const tab = tabs && tabs[0];
     if(!tab || !tab.id || !tab.url){
-      setStatus('No active tab URL');
+      setStatus('Error: No active tab');
       return;
     }
 
-    setStatus('Extracting page text...');
+    // 2. Extract Text
+    setStatus('Scanning page structure...');
     const execRes = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
@@ -102,10 +155,12 @@ analyzeBtn.addEventListener('click', async () => {
     });
 
     const text = (execRes && execRes[0] && execRes[0].result) || "";
-    setStatus('Contacting backend...');
-
+    
+    // 3. Send to AI Brain
+    setStatus('Analyzing patterns...');
+    
+    const API = 'http://127.0.0.1:8000/analyze'; 
     const payload = { url: tab.url, text, request_id: 'ext-' + Date.now() };
-    const API = 'http://localhost:8000/analyze';
 
     const resp = await fetch(API, {
       method: 'POST',
@@ -115,15 +170,15 @@ analyzeBtn.addEventListener('click', async () => {
 
     if(!resp.ok){
       const body = await resp.text().catch(()=>'');
-      throw new Error('HTTP ' + resp.status + ' ' + body);
+      throw new Error('Server Error ' + resp.status);
     }
 
     const data = await resp.json();
-    setStatus('Result received');
+    setStatus('Analysis Complete');
     showResult(data);
 
   } catch(err) {
     console.error(err);
-    showError(err);
+    showError("Is the Backend Running?");
   }
 });

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Alert: Urgent Action Required</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            width: 500px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #d93025;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .alert-banner {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert-banner strong {
+            font-size: 16px;
+        }
+        p {
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 13px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; 
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background-color: #1557b0;
+        }
+        .secondary-links {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .secondary-links a {
+            color: #1a73e8;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        .captcha-box {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            text-align: center;
+            margin-top: 15px;
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <!-- TRIGGER: "urgent action required" -->
+            <h1>⚠️ Urgent Action Required</h1>
+        </div>
+
+        <div class="content">
+            <div class="alert-banner">
+                <span>🛑</span>
+                <!-- TRIGGERS: "your account has been suspended", "unauthorized login" -->
+                <div>
+                    <strong>Your account has been suspended</strong> due to a suspected <strong>unauthorized login</strong> attempt from an unknown device.
+                </div>
+            </div>
+
+            <p>
+                Dear Customer,<br>
+                <!-- TRIGGER: "your account will be closed" -->
+                We have temporarily limited your access. <strong>Your account will be closed</strong> permanently within 24 hours if you do not resolve this issue.
+            </p>
+
+            <p>
+                <!-- TRIGGER: "verify your account", "confirm your identity" -->
+                Please <strong>verify your account</strong> immediately to restore access. You must <strong>confirm your identity</strong> before you can continue to use our services.
+            </p>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+            <form>
+                <h3>Step 1: Authentication</h3>
+                
+                <div class="form-group">
+                    <!-- TRIGGER: "update your information", "enter your credentials" -->
+                    <label>Update your information below:</label>
+                    <p style="font-size: 12px; margin: 5px 0;">Please <strong>enter your credentials</strong> to proceed.</p>
+                    <input type="text" placeholder="Username / Email">
+                </div>
+
+                <div class="form-group">
+                    <!-- TRIGGER: "provide your password", "password expired" -->
+                    <label>Security Check:</label>
+                    <input type="password" placeholder="Provide your password">
+                    <div style="color: red; font-size: 11px; margin-top: 3px;">* Note: If your <strong>password expired</strong>, enter your old one.</div>
+                </div>
+
+                <!-- TRIGGER: "verify payment", "transfer funds" -->
+                <div class="form-group">
+                    <label>Payment Verification (Optional)</label>
+                    <input type="text" placeholder="Card Number to verify payment">
+                    <div style="font-size: 11px; color: #666;">Required to <strong>transfer funds</strong> or lift limits.</div>
+                </div>
+
+                <!-- TRIGGER: "Click Image" -->
+                <div class="captcha-box">
+                    <p style="margin: 0 0 5px;">Security Check:</p>
+                    <div style="background: #ddd; height: 50px; display: flex; align-items: center; justify-content: center; font-style: italic; color: #555;">
+                        [ CAPTCHA IMAGE ]
+                    </div>
+                    <a href="#" style="font-size: 12px; color: #d93025;">Click Image if not visible</a>
+                </div>
+
+                <!-- TRIGGER: "click below to verify" -->
+                <button class="btn">Click below to verify</button>
+            </form>
+
+            <div class="secondary-links">
+                <a href="#">Privacy Policy</a> | <a href="#">Support</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

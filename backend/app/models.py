@@ -1,15 +1,14 @@
-# backend/app/models.py
-from pydantic import BaseModel, HttpUrl
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import List, Optional
 
 class AnalyzeRequest(BaseModel):
-    url: HttpUrl
-    text: Optional[str] = None
-    request_id: Optional[str] = None
+    url: str
+    text: str            # main.py uses 'text', not 'html_text'
+    request_id: str = "default-id"
 
 class AnalyzeResponse(BaseModel):
-    request_id: Optional[str] = None
-    url: HttpUrl
+    request_id: str
+    url: str
     score: int
     verdict: str
     reasons: List[str]

@@ -1,68 +1,39 @@
-﻿# backend/app/heuristic.py
+﻿from urllib.parse import urlparse
+import socket
 import re
-from urllib.parse import urlparse
-
-SUSPICIOUS_TOKENS = [
-    "login", "verify", "secure", "account", "update",
-    "paypal", "bank", "confirm", "signin", "authenticate"
-]
 
 def score_url(url: str) -> dict:
-    """
-    Simple lexical heuristic for URL scoring.
-    Returns: {"score": int, "verdict": str, "reasons": [str,...]}
-    """
+    score = 0
     reasons = []
+    
     try:
         parsed = urlparse(url)
-        domain = (parsed.netloc or "").lower()
-        path = (parsed.path or "").lower()
-    except Exception:
-        return {"score": 100, "verdict": "danger", "reasons": ["invalid url"]}
+        domain = parsed.netloc
+    except:
+        return {"score": 0, "reasons": ["Invalid URL format"]}
 
-    score = 0
+    # 1. IP Check
+    try:
+        socket.inet_aton(domain)
+        score += 60
+        reasons.append("IP address used as domain")
+    except socket.error:
+        pass
 
-    # domain length
-    if len(domain) > 40:
-        score += 25
-        reasons.append("very long domain")
-    elif len(domain) > 25:
+    # 2. Length Check
+    if len(url) > 75:
         score += 10
-        reasons.append("long domain")
+        reasons.append("URL suspiciously long")
 
-    # hyphens and odd chars
-    if domain.count("-") >= 2:
-        score += 15
-        reasons.append("multiple hyphens")
-    if re.search(r"[^a-z0-9\.\-:]", domain):
-        score += 15
-        reasons.append("odd characters in domain")
-
-    # many subdomains
-    if domain.count(".") >= 3:
-        score += 15
-        reasons.append("many subdomains")
-
-    # suspicious tokens
-    for t in SUSPICIOUS_TOKENS:
-        if t in domain or t in path:
-            score += 20
-            reasons.append(f"contains token '{t}'")
-            break
-
-    # digits ratio
-    digits = sum(c.isdigit() for c in domain)
-    if len(domain) > 0 and digits / len(domain) > 0.25:
+    # 3. Keyword Check
+    suspicious = ['login', 'verify', 'update', 'account', 'banking', 'secure']
+    # Check if keywords appear in the path (not the domain itself usually)
+    path = parsed.path + parsed.query
+    if any(s in path.lower() for s in suspicious):
         score += 10
-        reasons.append("many digits in domain")
+        reasons.append("Suspicious keywords in URL path")
 
-    # clamp and verdict
-    score = min(100, score)
-    if score >= 70:
-        verdict = "danger"
-    elif score >= 35:
-        verdict = "suspicious"
-    else:
-        verdict = "safe"
-
-    return {"score": score, "verdict": verdict, "reasons": reasons}
+    return {
+        "score": min(100, score),
+        "reasons": reasons
+    }

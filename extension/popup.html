@@ -1,51 +1,55 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="popup.css" />
+  <meta charset="UTF-8">
   <title>Phishing Guard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div id="root" class="card">
-    <header class="header">
-      <h1>Phishing Guard</h1>
-      <div id="status" class="status">Ready</div>
-    </header>
+  
+  <header>
+    <h2>PHISHING GUARD</h2>
+    <div id="status" class="status-line">System Ready</div>
+  </header>
 
-    <main>
-      <button id="analyze" class="btn">Analyze current page</button>
+  <div class="app-container">
+    <button id="analyze" class="primary-btn">SCAN PAGE</button>
 
-      <div id="resultArea" class="hidden">
-        <div class="score-row">
-          <div class="score-left">
-            <div class="progress-wrap">
-              <div id="bar" class="progress-bar"><div id="bar-fill" class="progress-fill"></div></div>
-            </div>
-            <div id="score" class="big-score">—</div>
-            <div id="verdict" class="verdict neutral">—</div>
-          </div>
+    <div id="error" class="error-box hidden"></div>
 
-          <div class="score-right">
-            <div><strong>URL:</strong> <span id="url-score">n/a</span></div>
-            <div><strong>Content:</strong> <span id="content-score">n/a</span></div>
-          </div>
-        </div>
-
-        <section class="reasons">
-          <h3>Reasons</h3>
-          <ul id="reasonsList"><li>No data yet.</li></ul>
-        </section>
-
-        <div id="raw" class="raw hidden"></div>
+    <div id="resultArea" class="results-container hidden">
+      
+      <div class="verdict-box">
+        <div class="score-display">THREAT LEVEL: <span id="score">--</span></div>
+        <h1 id="verdict">SAFE</h1>
       </div>
 
-      <div id="error" class="error hidden"></div>
-    </main>
+      <div class="progress-track">
+        <div id="bar-fill" class="progress-fill"></div>
+      </div>
 
-    <footer class="footer">
-      <small>v1.0 — Local dev</small>
-    </footer>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">URL Risk</span>
+          <span id="url-score" class="stat-value">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Content Risk</span>
+          <span id="content-score" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="reasons-box">
+        <h4>Analysis Report</h4>
+        <ul id="reasonsList"></ul>
+      </div>
+
+      <pre id="raw" class="hidden"></pre>
+    </div>
   </div>
 
   <script src="popup.js"></script>
