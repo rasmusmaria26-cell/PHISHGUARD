@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <title>Phishing Guard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhishGuard - AI Phishing Detection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="popup.css">
 </head>
+
 <body>
-  
+
   <header>
-    <h2>PHISHING GUARD</h2>
-    <div id="status" class="status-line">System Ready</div>
+    <h2>PHISHGUARD</h2>
+    <div id="status" class="status-line">🟢 System Ready</div>
   </header>
 
   <div class="app-container">
-    <button id="analyze" class="primary-btn">SCAN PAGE</button>
+    <button id="analyze" class="primary-btn">
+      <span>🔍 SCAN PAGE</span>
+    </button>
 
     <div id="error" class="error-box hidden"></div>
 
     <div id="resultArea" class="results-container hidden">
-      
+
       <div class="verdict-box">
         <div class="score-display">THREAT LEVEL: <span id="score">--</span></div>
         <h1 id="verdict">SAFE</h1>
@@ -34,17 +39,21 @@
 
       <div class="stats-grid">
         <div class="stat-card">
-          <span class="stat-label">URL Risk</span>
+          <span class="stat-label">🌐 URL</span>
           <span id="url-score" class="stat-value">0</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Content Risk</span>
+          <span class="stat-label">📝 Content</span>
           <span id="content-score" class="stat-value">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">👁️ Visual</span>
+          <span id="visual-score" class="stat-value">0</span>
         </div>
       </div>
 
       <div class="reasons-box">
-        <h4>Analysis Report</h4>
+        <h4>📊 Analysis Report</h4>
         <ul id="reasonsList"></ul>
       </div>
 
@@ -54,4 +63,5 @@
 
   <script src="popup.js"></script>
 </body>
+
 </html>

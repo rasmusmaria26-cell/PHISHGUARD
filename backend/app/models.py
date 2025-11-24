@@ -3,7 +3,8 @@ from typing import List, Optional
 
 class AnalyzeRequest(BaseModel):
     url: str
-    text: str            # main.py uses 'text', not 'html_text'
+    text: str
+    screenshot: Optional[str] = None  # <--- THIS WAS MISSING!
     request_id: str = "default-id"
 
 class AnalyzeResponse(BaseModel):
@@ -14,3 +15,4 @@ class AnalyzeResponse(BaseModel):
     reasons: List[str]
     url_score: int
     content_score: int
+    visual_score: int = 0  # <--- Good to have this too

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPal - Log In</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            height: 40px;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: #2c2e2f;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c2e2f;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd2d9;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #0070ba;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #0070ba;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: #005ea6;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #9da3a6;
+            font-size: 14px;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            color: #0070ba;
+            border: 1px solid #cbd2d9;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .footer-links {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer-links a {
+            color: #0070ba;
+            text-decoration: none;
+        }
+
+        .security-badge {
+            text-align: center;
+            margin-top: 20px;
+            color: #6c757d;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="/static/brands/paypal.jpg" alt="PayPal">
+        </div>
+
+        <h1>Log in to your account</h1>
+
+        <div class="alert">
+            ⚠️ <strong>Account Verification Required</strong><br>
+            We've detected unusual activity. Please verify your account immediately to avoid suspension.
+        </div>
+
+        <form>
+            <div class="form-group">
+                <label for="email">Email or mobile number</label>
+                <input type="email" id="email" placeholder="Email or mobile number" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Password" required>
+            </div>
+
+            <button type="submit" class="btn-primary">Log In</button>
+
+            <div class="divider">or</div>
+
+            <button type="button" class="btn-secondary">Sign Up</button>
+        </form>
+
+        <div class="footer-links">
+            <a href="#">Having trouble logging in?</a>
+        </div>
+
+        <div class="security-badge">
+            🔒 Secure connection - Your information is protected
+        </div>
+    </div>
+</body>
+
+</html>

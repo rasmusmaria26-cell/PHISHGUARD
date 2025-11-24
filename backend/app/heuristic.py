@@ -1,6 +1,20 @@
 ﻿from urllib.parse import urlparse
-import socket
+import ipaddress
 import re
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Constants
+IP_ADDRESS_PENALTY = 60
+SUSPICIOUS_URL_LENGTH = 75
+URL_LENGTH_PENALTY = 10
+KEYWORD_PENALTY = 10
+NO_HTTPS_PENALTY = 15
+SUSPICIOUS_TLD_PENALTY = 25
+
+SUSPICIOUS_KEYWORDS = ['login', 'verify', 'update', 'account', 'banking', 'secure', 'signin', 'password']
+SUSPICIOUS_TLDS = ['.tk', '.ml', '.ga', '.cf', '.gq', '.xyz', '.top', '.work', '.click']
 
 def score_url(url: str) -> dict:
     score = 0
@@ -9,29 +23,54 @@ def score_url(url: str) -> dict:
     try:
         parsed = urlparse(url)
         domain = parsed.netloc
-    except:
-        return {"score": 0, "reasons": ["Invalid URL format"]}
+    except (ValueError, AttributeError) as e:
+        logger.warning(f"URL parsing failed for {url}: {e}")
+        return {"score": 50, "reasons": ["Malformed URL - potentially suspicious"]}
 
-    # 1. IP Check
+    if not domain:
+        return {"score": 50, "reasons": ["Missing domain in URL"]}
+
+    # 1. IP Address Check (IPv4 and IPv6)
+    # Remove port if present
+    hostname = domain.split(':')[0]
     try:
-        socket.inet_aton(domain)
-        score += 60
+        ipaddress.ip_address(hostname)
+        score += IP_ADDRESS_PENALTY
         reasons.append("IP address used as domain")
-    except socket.error:
-        pass
+    except ValueError:
+        pass  # Not an IP, which is normal
 
-    # 2. Length Check
-    if len(url) > 75:
-        score += 10
+    # 2. HTTPS Check
+    if parsed.scheme == 'http':
+        score += NO_HTTPS_PENALTY
+        reasons.append("No HTTPS encryption")
+
+    # 3. Length Check
+    if len(url) > SUSPICIOUS_URL_LENGTH:
+        score += URL_LENGTH_PENALTY
         reasons.append("URL suspiciously long")
 
-    # 3. Keyword Check
-    suspicious = ['login', 'verify', 'update', 'account', 'banking', 'secure']
+    # 4. Suspicious TLD Check
+    domain_lower = domain.lower()
+    for tld in SUSPICIOUS_TLDS:
+        if domain_lower.endswith(tld):
+            score += SUSPICIOUS_TLD_PENALTY
+            reasons.append(f"Suspicious top-level domain ({tld})")
+            break
+
+    # 5. Keyword Check
     # Check if keywords appear in the path (not the domain itself usually)
     path = parsed.path + parsed.query
-    if any(s in path.lower() for s in suspicious):
-        score += 10
-        reasons.append("Suspicious keywords in URL path")
+    found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in path.lower()]
+    if found_keywords:
+        score += KEYWORD_PENALTY
+        reasons.append(f"Suspicious keywords in URL path: {', '.join(found_keywords[:3])}")
+
+    # 6. Subdomain Count (many subdomains can be suspicious)
+    subdomain_count = domain.count('.')
+    if subdomain_count > 3:
+        score += 15
+        reasons.append(f"Excessive subdomains ({subdomain_count})")
 
     return {
         "score": min(100, score),

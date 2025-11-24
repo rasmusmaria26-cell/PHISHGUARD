@@ -1,0 +1,20 @@
+path: data/logos
+train: images/train
+val: images/val
+test: images/test
+
+# Number of classes
+nc: 10
+
+# Class names
+names: 
+  0: paypal
+  1: google
+  2: microsoft
+  3: facebook
+  4: netflix
+  5: amazon
+  6: apple
+  7: bankofamerica
+  8: chase
+  9: wellsfargo

@@ -1,80 +1,111 @@
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
-
-# Import your specific files
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from .models import AnalyzeRequest, AnalyzeResponse
 from .heuristic import score_url
-from .content_analyzer import analyze_content  # <--- This uses your new code
+from .content_analyzer import analyze_content 
+from .image_analyzer import analyze_screenshot 
+import os
 
-# Setup Logging
-logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s: %(message)s")
-logger = logging.getLogger("uvicorn.error")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, 
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Phishing Guard Backend")
 
-# --- CORS SETUP ---
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Base directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Mount static files for brand logos
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "data")), name="static")
 
 @app.get("/")
 def health_check():
     return {"status": "running", "service": "Phishing Guard API"}
 
+# Serve test pages
+@app.get("/visual_trap.html", response_class=HTMLResponse)
+async def serve_paypal():
+    with open(os.path.join(BASE_DIR, "visual_trap.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
+@app.get("/test_netflix.html", response_class=HTMLResponse)
+async def serve_netflix():
+    with open(os.path.join(BASE_DIR, "test_netflix.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
+@app.get("/test_google.html", response_class=HTMLResponse)
+async def serve_google():
+    with open(os.path.join(BASE_DIR, "test_google.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
+@app.get("/test_dashboard.html", response_class=HTMLResponse)
+async def serve_dashboard():
+    with open(os.path.join(BASE_DIR, "test_dashboard.html"), "r", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze(req: AnalyzeRequest):
-    """
-    Orchestrates the analysis:
-    1. Checks URL (heuristic.py)
-    2. Checks Content (content_analyzer.py - ML + Keywords)
-    3. Combines them for a final verdict
-    """
+    logger.info(f"Analyzing URL: {req.url}")
     
-    # 1. Analyze URL
-    # (Checks for IP addresses, length, weird domains)
     url_res = score_url(req.url)
     url_score = url_res.get("score", 0)
     
-    # 2. Analyze Content
-    # (Uses your new function that handles ML loading internally)
-    # Your analyze_content function expects a string, so we pass req.text
     content_res = analyze_content(req.text)
     content_score = content_res.get("score", 0)
 
-    # 3. Final Weighting
-    # Logic: If URL is dangerous (score > 50), it counts for 60% of the verdict.
-    # Otherwise, Content is king (counts for 70%).
-    if url_score > 50:
-        final_score = (url_score * 0.6) + (content_score * 0.4)
+    visual_score = 0
+    visual_reason = None
+    
+    if req.screenshot:
+        vis_res = analyze_screenshot(req.screenshot, req.url)
+        visual_score = vis_res.get("score", 0)
+        logger.info(f"Visual check: Score={visual_score}, Reason={vis_res.get('reason')}")
+        if vis_res.get("reason") and visual_score > 50:
+            visual_reason = f"Visuals: {vis_res['reason']}"
+
+    original_visual_score = visual_score
+    if content_score < 5 and 50 < original_visual_score < 80:
+        logger.info("[VISUAL VETO] Reducing visual weight")
+        visual_score = original_visual_score * 0.3
+    
+    if url_score > 80:
+        final_score = max(url_score, content_score, visual_score) 
     else:
-        final_score = (url_score * 0.3) + (content_score * 0.7)
+        final_score = (url_score * 0.2) + (content_score * 0.5) + (visual_score * 0.3)
 
     final_score = int(final_score)
-
-    # 4. Aggregate Reasons
-    reasons = url_res.get("reasons", [])
     
-    # Add content reasons
+    if final_score >= 75:
+        verdict = "phishing"
+    elif final_score >= 45:
+        verdict = "suspicious"
+    else:
+        verdict = "safe"
+
+    reasons = url_res.get("reasons", [])
     if content_res.get("keyword_hits") and content_res["keyword_hits"] != "No suspicious keywords":
         reasons.append(f"Suspicious keywords: {content_res['keyword_hits']}")
-    
     if content_res.get("ml_probability", 0) > 70:
         reasons.append("AI Model recognized phishing writing style")
+    if visual_reason and visual_score > 0: 
+        reasons.append(visual_reason)
 
-    # 5. Determine Verdict
-    if final_score > 75:
-        verdict = "Phishing"
-    elif final_score > 45:
-        verdict = "Suspicious"
-    else:
-        verdict = "Safe"
-
-    logger.info(f"Analyzed {req.url} -> Score: {final_score} ({verdict})")
+    logger.info(f"Analysis complete: Score={final_score}, Verdict={verdict}")
 
     return AnalyzeResponse(
         request_id=req.request_id,
@@ -83,5 +114,6 @@ async def analyze(req: AnalyzeRequest):
         verdict=verdict,
         reasons=reasons,
         url_score=url_score,
-        content_score=content_score
+        content_score=content_score,
+        visual_score=int(visual_score)
     )

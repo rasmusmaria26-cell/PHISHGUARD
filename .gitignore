@@ -1,1 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+.venv/
+.venv1/
+venv/
+env/
+ENV/
+
+# Large Data Files
 backend/data/phishing_email.csv
+backend/data/phishing_email.zip
+backend/data/*.csv
+backend/data/*.zip
+*.csv
+*.zip
+
+# Model Files
+backend/models/*.joblib
+backend/models/*.pkl
+backend/models/*.h5
+backend/models/*.pt
+backend/models/*.pth
+backend/models/*.weights
+*.joblib
+*.pkl
+
+# YOLO datasets and runs
+backend/data/logos/train/
+backend/data/logos/valid/
+backend/data/logos/test/
+runs/
+
+# Environment variables
+.env
+*.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp

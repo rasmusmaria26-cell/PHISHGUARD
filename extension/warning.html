@@ -1,128 +1,373 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Security Alert</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚠️ Security Alert - PhishGuard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
     <style>
-        body {
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             height: 100vh;
-            background-color: #0f0c29;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             position: relative;
         }
-        /* Animated Background Grid */
-        .grid {
+
+        /* Animated Background Particles */
+        .particles {
             position: absolute;
-            width: 200%;
-            height: 200%;
-            background-image: 
-                linear-gradient(rgba(255, 0, 85, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 0, 85, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
-            transform: perspective(500px) rotateX(60deg);
-            animation: gridMove 10s linear infinite;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             z-index: 1;
         }
-        @keyframes gridMove {
-            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
-            100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 71, 87, 0.5);
+            border-radius: 50%;
+            animation: float 15s infinite;
         }
 
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        /* Warning Container */
         .container {
             position: relative;
             z-index: 10;
             text-align: center;
-            background: rgba(20, 10, 20, 0.9);
-            border: 2px solid #ff0055;
-            padding: 50px;
-            border-radius: 20px;
-            box-shadow: 0 0 50px rgba(255, 0, 85, 0.4);
-            max-width: 600px;
-            backdrop-filter: blur(10px);
+            background: rgba(27, 24, 51, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 71, 87, 0.5);
+            padding: 60px 50px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(255, 71, 87, 0.4),
+                0 0 100px rgba(255, 71, 87, 0.2);
+            max-width: 700px;
+            width: 90%;
+            animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Shield Icon */
+        .shield-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 71, 87, 0.8));
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Title */
         h1 {
-            margin: 0;
             font-size: 4rem;
-            color: #ff0055;
+            font-weight: 900;
+            color: #ff4757;
             text-transform: uppercase;
-            letter-spacing: 5px;
-            text-shadow: 0 0 20px rgba(255, 0, 85, 0.8);
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255, 71, 87, 0.8),
+                0 0 60px rgba(255, 71, 87, 0.5);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                text-shadow: 0 0 30px rgba(255, 71, 87, 0.8),
+                    0 0 60px rgba(255, 71, 87, 0.5);
+            }
+
+            50% {
+                text-shadow: 0 0 40px rgba(255, 71, 87, 1),
+                    0 0 80px rgba(255, 71, 87, 0.7);
+            }
         }
 
         h2 {
-            margin-top: 10px;
-            font-weight: 300;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
+            font-weight: 400;
             color: #ff8fab;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
         }
 
-        .details {
+        /* Threat Details */
+        .threat-details {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-left: 4px solid #ff4757;
+            border-radius: 12px;
+            padding: 25px;
             margin: 30px 0;
-            background: rgba(255, 0, 0, 0.1);
-            padding: 20px;
-            border-radius: 10px;
             text-align: left;
-            border-left: 4px solid #ff0055;
         }
 
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #a8a8b3;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .detail-value {
+            font-weight: 700;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        .threat-score {
+            font-size: 2rem;
+            color: #ff4757;
+            text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+        }
+
+        .url-display {
+            font-size: 0.85rem;
+            color: #888;
+            word-break: break-all;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+        }
+
+        /* Buttons */
         .btn-group {
-            margin-top: 30px;
+            margin-top: 40px;
             display: flex;
             gap: 20px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         button {
-            padding: 15px 30px;
-            border-radius: 8px;
+            padding: 18px 40px;
+            border-radius: 12px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-family: 'Poppins', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .safe-btn {
-            background: #ff0055;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
             border: none;
-            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+            box-shadow: 0 8px 24px rgba(245, 87, 108, 0.4);
         }
-        .safe-btn:hover { background: #d40045; transform: scale(1.05); }
+
+        .safe-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(245, 87, 108, 0.6);
+        }
+
+        .safe-btn:active {
+            transform: translateY(-1px);
+        }
 
         .danger-btn {
             background: transparent;
-            border: 1px solid #555;
+            border: 2px solid rgba(255, 255, 255, 0.2);
             color: #888;
         }
-        .danger-btn:hover { color: white; border-color: white; }
 
+        .danger-btn:hover {
+            color: white;
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Warning Badge */
+        .warning-badge {
+            display: inline-block;
+            background: rgba(255, 165, 2, 0.2);
+            border: 1px solid rgba(255, 165, 2, 0.5);
+            color: #ffa502;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+                letter-spacing: 4px;
+            }
+
+            h2 {
+                font-size: 1.1rem;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
+
 <body>
-    <div class="grid"></div>
+    <!-- Animated Particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Warning Container -->
     <div class="container">
+        <div class="shield-icon">🛡️</div>
         <h1 id="verdict">BLOCKED</h1>
-        <h2>Phishing Guard neutralized a threat.</h2>
-        
-        <div class="details">
-            <p><strong>Threat Level:</strong> <span id="score">--</span>/100</p>
-            <p><strong>Reason:</strong> <span id="reason">Suspicious Content Detected</span></p>
-            <p style="font-size: 12px; opacity: 0.7; margin-top:10px; word-break: break-all;">Site: <span id="url">---</span></p>
+        <h2>PhishGuard neutralized a threat</h2>
+
+        <div class="threat-details">
+            <div class="detail-row">
+                <span class="detail-label">Threat Level</span>
+                <span class="detail-value threat-score"><span id="score">--</span>/100</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Detection Method</span>
+                <span class="detail-value" id="reason">Suspicious Content Detected</span>
+            </div>
+            <div class="url-display">
+                <strong>🔗 Blocked URL:</strong><br>
+                <span id="url">---</span>
+            </div>
+        </div>
+
+        <div class="warning-badge">
+            ⚠️ This site may steal your personal information
         </div>
 
         <div class="btn-group">
-            <button id="btn-safe" class="safe-btn">GO BACK TO SAFETY</button>
-            <button id="btn-danger" class="danger-btn">I understand the risk</button>
+            <button id="btn-safe" class="safe-btn">
+                <span>← Go Back to Safety</span>
+            </button>
+            <button id="btn-danger" class="danger-btn">
+                <span>I Understand the Risk →</span>
+            </button>
         </div>
     </div>
 
     <script src="warning.js"></script>
+    <script>
+        // Create animated particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+    </script>
 </body>
+
 </html>

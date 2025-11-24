@@ -1,7 +1,10 @@
 import joblib
 import os
 import re
+import logging
 from typing import Tuple
+
+logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "../models/content_model.joblib")
@@ -11,11 +14,11 @@ LOADED_MODEL = None
 try:
     if os.path.exists(MODEL_PATH):
         LOADED_MODEL = joblib.load(MODEL_PATH)
-        print(f"ML Model loaded successfully from {MODEL_PATH}")
+        logger.info(f"ML Model loaded successfully from {MODEL_PATH}")
     else:
-        print("Warning: Model file not found. Running in Heuristic-only mode.")
-except Exception as e:
-    print(f"Error loading model: {e}")
+        logger.warning("Model file not found. Running in Heuristic-only mode.")
+except (FileNotFoundError, EOFError, ValueError) as e:
+    logger.error(f"Error loading model: {e}")
 
 SUSPICIOUS_PHRASES = [
     "verify your account", "update your information", "confirm your identity",
