@@ -3,6 +3,7 @@ import numpy as np
 import base64
 import os
 import logging
+import glob
 
 logger = logging.getLogger(__name__)
 
@@ -11,43 +12,59 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BRANDS_DIR = os.path.join(BASE_DIR, "../data/brands")
 
 # Constants
-MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
-ORB_FEATURES = 2000  # Reduced from 5000 for better performance
-MIN_INLIERS = 10
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+MIN_INLIERS = 5
 MARGIN_MULTIPLIER = 1.5
 
-REFERENCE_LOGOS = {}
-orb = cv2.ORB_create(nfeatures=ORB_FEATURES)
-
-# Brand whitelist: brand_name -> list of legitimate domains
+# Initialize Global Variables
 BRAND_WHITELIST = {
-    "google": ["youtube", "google", "gmail", "gstatic"],
-    "microsoft": ["microsoft", "live.com", "office", "bing", "msn"],
-    "facebook": ["facebook", "fb.com", "meta", "instagram"],
+    "paypal": ["paypal.com", "paypal.me"],
+    "google": ["google.com", "accounts.google.com"],
+    "microsoft": ["microsoft.com", "live.com", "office.com"],
     "netflix": ["netflix.com"],
-    "paypal": ["paypal.com"],
-    "amazon": ["amazon.com", "aws"],
-    "apple": ["apple.com", "icloud"],
+    "facebook": ["facebook.com", "fb.com"],
+    "apple": ["apple.com", "icloud.com"],
+    "amazon": ["amazon.com", "amazon.co.uk", "amazon.de"],
+    "instagram": ["instagram.com"],
+    "linkedin": ["linkedin.com"],
+    "twitter": ["twitter.com", "x.com"],
+    "whatsapp": ["whatsapp.com"],
+    "telegram": ["telegram.org", "t.me"]
 }
 
-def load_references():
-    """Loads logos from the data/brands folder."""
+REFERENCE_LOGOS = {}
+
+def load_reference_logos():
+    """Load reference logos for ORB matching"""
+    global REFERENCE_LOGOS
     if not os.path.exists(BRANDS_DIR):
-        logger.warning(f"Brands folder not found at {BRANDS_DIR}")
+        logger.warning(f"Brands directory not found: {BRANDS_DIR}")
         return
 
-    for filename in os.listdir(BRANDS_DIR):
-        if filename.endswith(('.png', '.jpg', '.jpeg')):
-            brand_name = os.path.splitext(filename)[0]
-            path = os.path.join(BRANDS_DIR, filename)
-            img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    # Load all images in the brands directory
+    # Look for both PNG and JPG files
+    image_files = glob.glob(os.path.join(BRANDS_DIR, "*.png")) + glob.glob(os.path.join(BRANDS_DIR, "*.jpg"))
+    
+    for img_path in image_files:
+        filename = os.path.basename(img_path)
+        # Fix: correctly strip extension and any suffix like _logo
+        brand_name = filename.split('.')[0].split('_')[0].lower()
+        
+        try:
+            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
             if img is not None:
                 REFERENCE_LOGOS[brand_name] = img
-                logger.info(f"Loaded brand logo: {brand_name}")
+                # Update whitelist if brand not known (default to name.com)
+                if brand_name not in BRAND_WHITELIST:
+                    BRAND_WHITELIST[brand_name] = [f"{brand_name}.com"]
+            else:
+                logger.warning(f"Could not read logo: {filename}")
+        except Exception as e:
+            logger.error(f"Error loading logo {filename}: {e}")
 
-load_references()
+    logger.info(f"Loaded {len(REFERENCE_LOGOS)} reference logos for ORB detection")
 
-# --- YOLO INTEGRATION ---
+# Initialize YOLO and ORB
 try:
     from .yolo_detector import get_detector
     yolo_detector = get_detector()
@@ -60,9 +77,18 @@ except ImportError as e:
     logger.warning(f"YOLO detector not available: {e}")
     USE_YOLO = False
 
+# Initialize ORB
+orb = cv2.ORB_create()
+
+# Load logos on module import
+load_reference_logos()
+
 def analyze_screenshot(base64_string: str, url: str) -> dict:
     try:
         # 1. Validate and Decode Image
+        if not base64_string:
+             return {"score": 0, "verdict": "Error", "reason": "Empty image string"}
+
         if "," in base64_string:
             base64_string = base64_string.split(",")[1]
         
@@ -158,9 +184,11 @@ def analyze_screenshot(base64_string: str, url: str) -> dict:
                 
                 if mask is not None:
                     inliers = np.sum(mask)
-                    logger.debug(f"Brand {brand}: {inliers} inliers")
+                    # Log potentially interesting matches
+                    if inliers > 2:
+                        logger.info(f"debug: Brand {brand} -> {inliers} inliers")
                     
-                    # Threshold check
+                    # Threshold check using lowered threshold
                     if inliers > MIN_INLIERS: 
                         brand_scores[brand] = inliers
 
@@ -169,6 +197,7 @@ def analyze_screenshot(base64_string: str, url: str) -> dict:
         highest_score = 0
         
         if brand_scores:
+            logger.info(f"Brand scores candidates: {brand_scores}")
             sorted_brands = sorted(brand_scores.items(), key=lambda item: item[1], reverse=True)
             winner_name, winner_score = sorted_brands[0]
             
@@ -190,13 +219,17 @@ def analyze_screenshot(base64_string: str, url: str) -> dict:
         if detected_brand:
             logger.info(f"Visual match: {detected_brand} with {highest_score} inliers (ORB)")
             
-            url_lower = url.lower()
+            # Extract domain from URL for whitelist checking
+            from urllib.parse import urlparse
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc.lower()  # Get only the domain part
             brand_lower = detected_brand.lower()
 
             # Check whitelist using dictionary
             if brand_lower in BRAND_WHITELIST:
                 legitimate_domains = BRAND_WHITELIST[brand_lower]
-                if any(domain in url_lower for domain in legitimate_domains):
+                # Check if the actual domain matches any whitelisted domain
+                if any(legit_domain in domain for legit_domain in legitimate_domains):
                     return {
                         "score": 0,
                         "verdict": "Safe",
@@ -205,21 +238,13 @@ def analyze_screenshot(base64_string: str, url: str) -> dict:
                     }
 
             # PHISHING CHECK (URL Mismatch)
-            # If not whitelisted but brand detected in URL, it's safe
-            if brand_lower not in url_lower:
-                return {
-                    "score": 95,
-                    "verdict": "Phishing",
-                    "reason": f"Visuals mimic '{detected_brand}' but URL is mismatched",
-                    "method": "ORB"
-                }
-            else:
-                return {
-                    "score": 0,
-                    "verdict": "Safe",
-                    "reason": f"Verified visual branding for {detected_brand}",
-                    "method": "ORB"
-                }
+            # If brand detected but domain doesn't match whitelist -> PHISHING
+            return {
+                "score": 95,
+                "verdict": "Phishing",
+                "reason": f"Visuals mimic '{detected_brand}' but URL is mismatched",
+                "method": "ORB"
+            }
 
         return {"score": 0, "verdict": "Safe", "reason": "No dominant brand impersonation detected", "method": "ORB"}
 

@@ -8,6 +8,8 @@ from .heuristic import score_url
 from .content_analyzer import analyze_content 
 from .image_analyzer import analyze_screenshot 
 import os
+import csv
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -106,6 +108,29 @@ async def analyze(req: AnalyzeRequest):
         reasons.append(visual_reason)
 
     logger.info(f"Analysis complete: Score={final_score}, Verdict={verdict}")
+
+    # --- CSV LOGGING ---
+    SCANS_FILE = os.path.join(BASE_DIR, "scans.csv")
+    try:
+        file_exists = os.path.isfile(SCANS_FILE)
+        with open(SCANS_FILE, mode='a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            # Write header if new file
+            if not file_exists:
+                writer.writerow(["Timestamp", "URL", "Score", "Verdict", "Reasons", "Strategy"])
+            
+            # Write scan data
+            writer.writerow([
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                req.url,
+                final_score,
+                verdict,
+                "; ".join(reasons),
+                "Auto-Scan" if "auto" in req.request_id else "Manual"
+            ])
+    except Exception as e:
+        logger.error(f"Failed to log to CSV: {e}")
+    # -------------------
 
     return AnalyzeResponse(
         request_id=req.request_id,
