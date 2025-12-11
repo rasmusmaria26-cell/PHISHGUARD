@@ -16,7 +16,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-async function scanTab(tabId, url) {
+async function scanTab(tabId, rawUrl) {
+    // Normalize URL (remove hash fragments) to prevent duplicate scans on SPAs
+    const url = rawUrl.split('#')[0];
+
     // Skip if recently scanned (simple debounce/cache)
     if (scanCache.has(url)) {
         const lastScan = scanCache.get(url);
@@ -26,8 +29,9 @@ async function scanTab(tabId, url) {
         }
     }
 
-    console.log('Initiating scan for:', url);
+    // LOCK: Set cache immediately to prevent race conditions
     scanCache.set(url, Date.now());
+    console.log('Initiating scan for:', url);
 
     try {
         // 1. Capture Screenshot
@@ -65,7 +69,10 @@ async function scanTab(tabId, url) {
         console.log('Scan result:', data);
 
         // 4. Handle Result
-        updateIcon(tabId, data.verdict);
+        if (data.verdict === 'phishing') {
+            await incrementThreatCount();
+        }
+        updateBadge(tabId, data.verdict);
 
         // If dangerous, redirect or warn
         if (data.score >= 75 || data.verdict === 'phishing') {
@@ -79,25 +86,55 @@ async function scanTab(tabId, url) {
     }
 }
 
-function updateIcon(tabId, verdict) {
-    let iconPath = "icons/icon_safe.png"; // You might need to add these icons
-    let badgeText = "";
-    let badgeColor = "#4CAF50";
+async function incrementThreatCount() {
+    const data = await chrome.storage.local.get(['threats today', 'lastReset']);
+    let count = data['threats today'] || 0;
+    const lastReset = data['lastReset'] || 0;
 
-    verdict = (verdict || "").toLowerCase();
+    // Reset if it's a new day
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-    if (verdict === 'phishing') {
-        badgeText = "!!!";
-        badgeColor = "#F44336";
-    } else if (verdict === 'suspicious') {
-        badgeText = "?";
-        badgeColor = "#FF9800";
-    } else {
-        badgeText = "OK";
-        badgeColor = "#4CAF50";
+    if (today > lastReset) {
+        count = 0;
+        chrome.storage.local.set({ 'lastReset': today });
     }
 
-    // Since we might not have dynamic icons yet, just set badge
-    chrome.action.setBadgeText({ text: badgeText, tabId: tabId });
-    chrome.action.setBadgeBackgroundColor({ color: badgeColor, tabId: tabId });
+    count++;
+    await chrome.storage.local.set({ 'threats today': count });
+
+    // Update badge globally (optional, or per tab)
+    chrome.action.setBadgeText({ text: count.toString() });
+    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+}
+
+function updateBadge(tabId, verdict) {
+    // We strictly show the threat count on the badge globally now, 
+    // OR we could show the status of the current page.
+    // User requested "Show number of threats blocked today".
+
+    // So usually we don't overwrite the global badge with page status unless we use tabId specific badges.
+    // Let's use tabId specific for status ("SAFE", "WARN") ONLY if the user is on that tab,
+    // otherwise the default badge is the count.
+
+    verdict = (verdict || "").toLowerCase();
+    let text = "";
+    let color = "#4CAF50";
+
+    if (verdict === 'phishing') {
+        text = "!";
+        color = "#F44336";
+    } else if (verdict === 'suspicious') {
+        text = "?";
+        color = "#FF9800";
+    } else {
+        // Safe pages don't need a badge, keeps it clean.
+        // We want the global badge (threat count) to show through if possible, 
+        // but chrome APIs make mixing difficult.
+        // Let's prioritize the page status if it's dangerous.
+        return;
+    }
+
+    chrome.action.setBadgeText({ text: text, tabId: tabId });
+    chrome.action.setBadgeBackgroundColor({ color: color, tabId: tabId });
 }

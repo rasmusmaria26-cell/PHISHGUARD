@@ -2,62 +2,245 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PhishGuard - AI Phishing Detection</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap"
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishGuard</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@300;400;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="popup.css">
 </head>
 
 <body>
-
-  <header>
-    <h2>PHISHGUARD</h2>
-    <div id="status" class="status-line">🟢 System Ready</div>
-  </header>
-
-  <div class="app-container">
-    <button id="analyze" class="primary-btn">
-      <span>🔍 SCAN PAGE</span>
-    </button>
-
-    <div id="error" class="error-box hidden"></div>
-
-    <div id="resultArea" class="results-container hidden">
-
-      <div class="verdict-box">
-        <div class="score-display">THREAT LEVEL: <span id="score">--</span></div>
-        <h1 id="verdict">SAFE</h1>
-      </div>
-
-      <div class="progress-track">
-        <div id="bar-fill" class="progress-fill"></div>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card">
-          <span class="stat-label">🌐 URL</span>
-          <span id="url-score" class="stat-value">0</span>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" style="color: #3b82f6;">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">📝 Content</span>
-          <span id="content-score" class="stat-value">0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">👁️ Visual</span>
-          <span id="visual-score" class="stat-value">0</span>
+        <div>
+          <div class="title">PhishGuard</div>
+          <div class="subtitle">Real-time website protection</div>
         </div>
       </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="settingsBtn" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+        </button>
+      </div>
+    </div>
 
-      <div class="reasons-box">
-        <h4>📊 Analysis Report</h4>
-        <ul id="reasonsList"></ul>
+    <div class="main">
+      <div class="row">
+        <div class="cta">
+          <h3>Scan this page</h3>
+          <p>Quickly detect phishing risks, suspicious scripts, and cloned visuals.</p>
+          <button class="scan-btn" id="analyzeBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 21l-4.35-4.35" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            <span id="btnText">Scan page</span>
+            <span class="ripple-container"></span>
+          </button>
+
+          <!-- Progress Bar -->
+          <div class="progress-container hidden" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="progress-label hidden" id="progressLabel">Initializing...</div>
+        </div>
+
+        <div class="quick">
+          <div class="label">Scans Today</div>
+          <div class="value" id="dailyScans">0</div>
+          <div class="pill" id="threatsBlocked">0 threats</div>
+        </div>
       </div>
 
-      <pre id="raw" class="hidden"></pre>
+      <!-- Recent Scans Dropdown -->
+      <div class="history-section">
+        <div class="history-header" id="historyToggle">
+          <span>🕒 Recent Scans</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+        <div class="history-list hidden" id="historyList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Status Message -->
+      <div class="status-msg hidden" id="statusMsg"></div>
+
+      <!-- Result Card -->
+      <div class="result hidden" id="resultCard">
+        <div class="verdict-row">
+          <div class="verdict-left">
+            <div class="badge" id="verdictBadge">SAFE</div>
+            <div>
+              <div class="verdict-title" id="verdictTitle">No phishing detected</div>
+              <div class="verdict-sub" id="verdictSub">Confidence: high</div>
+            </div>
+          </div>
+          <div class="score-ring" id="scoreRing">
+            <svg width="86" height="86">
+              <circle class="score-ring-circle" cx="43" cy="43" r="40"></circle>
+            </svg>
+            <span class="score-number">0</span>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="g-card">
+            <div class="g-label">URL</div>
+            <div class="g-value" id="urlScore">0</div>
+          </div>
+          <div class="g-card">
+            <div class="g-label">Content</div>
+            <div class="g-value" id="contentScore">0</div>
+          </div>
+          <div class="g-card">
+            <div class="g-label">Visual</div>
+            <div class="g-value" id="visualScore">0</div>
+          </div>
+        </div>
+
+        <!-- Collapsible Toggle -->
+        <div class="detail-toggle" id="detailToggle">
+          Show detailed analysis
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div class="details-wrapper" id="detailsWrapper">
+          <div class="details" id="detailsContainer">
+            <!-- Details will be dynamically inserted -->
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="result-actions">
+          <button class="action-btn" id="copyBtn" title="Copy Report">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            Copy
+          </button>
+          <button class="action-btn" id="shareBtn" title="Share Threat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Share
+          </button>
+          <button class="action-btn" id="reportBtn" title="Report False Positive">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+            Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Error Display -->
+      <div class="error-msg hidden" id="errorMsg"></div>
+    </div>
+
+    <div class="footer">
+      <div class="version">v1.2.0</div>
+      <div class="help">Help & Feedback</div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Settings</h3>
+        <button class="close-btn" id="closeSettings">×</button>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <span>Auto-Scan Pages</span>
+          <small>Scan every page load automatically</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="autoScanToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <span>Sensitivity</span>
+          <small>Adjust detection strictness</small>
+        </div>
+        <select id="sensitivitySelect" class="setting-select">
+          <option value="strict">Strict</option>
+          <option value="balanced" selected>Balanced</option>
+          <option value="permissive">Permissive</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">
+          <span>Notifications</span>
+          <small>Show toast alerts for background scans</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="notifyToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- Report Modal -->
+  <div id="reportModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Report Issue</h3>
+        <button class="close-btn" id="closeReport">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-group">
+          <label class="setting-label">Reason</label>
+          <select class="setting-select" id="reportReason" style="width:100%">
+            <option value="false_positive">Safe site flagged as Phishing</option>
+            <option value="false_negative">Phishing site missed</option>
+            <option value="broken_site">Extension broke the site</option>
+          </select>
+        </div>
+        <div class="setting-group" style="margin-top:15px">
+          <label class="setting-label">Comments (optional)</label>
+          <textarea id="reportComments" class="setting-select"
+            style="width:100%; height:80px; resize:none; font-family:inherit"
+            placeholder="Describe the issue..."></textarea>
+        </div>
+        <button class="btn-primary" id="submitReportBtn" style="width:100%; margin-top:20px">Submit Report</button>
+      </div>
     </div>
   </div>
 
@@ -65,3 +248,4 @@
 </body>
 
 </html>
+```

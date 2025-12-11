@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from .models import AnalyzeRequest, AnalyzeResponse
+from .models import AnalyzeRequest, AnalyzeResponse, ReportRequest
 from .heuristic import score_url
 from .content_analyzer import analyze_content 
 from .image_analyzer import analyze_screenshot 
@@ -92,9 +92,18 @@ async def analyze(req: AnalyzeRequest):
 
     final_score = int(final_score)
     
-    if final_score >= 75:
+    # sensitivity thresholds
+    s = req.sensitivity.lower()
+    if s == 'strict':
+        p_thresh, s_thresh = 65, 35
+    elif s == 'permissive':
+        p_thresh, s_thresh = 85, 60
+    else: # balanced
+        p_thresh, s_thresh = 75, 45
+
+    if final_score >= p_thresh:
         verdict = "phishing"
-    elif final_score >= 45:
+    elif final_score >= s_thresh:
         verdict = "suspicious"
     else:
         verdict = "safe"
@@ -142,3 +151,26 @@ async def analyze(req: AnalyzeRequest):
         content_score=content_score,
         visual_score=int(visual_score)
     )
+
+@app.post("/report")
+async def report_issue(req: ReportRequest):
+    logger.info(f"Received feedback report for: {req.url}")
+    
+    FEEDBACK_FILE = os.path.join(BASE_DIR, "feedback.csv")
+    try:
+        file_exists = os.path.isfile(FEEDBACK_FILE)
+        with open(FEEDBACK_FILE, mode='a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(["Timestamp", "URL", "Reason", "Comments"])
+            
+            writer.writerow([
+                req.timestamp,
+                req.url,
+                req.reason,
+                req.comments
+            ])
+        return {"status": "success", "message": "Report logged"}
+    except Exception as e:
+        logger.error(f"Failed to log feedback: {e}")
+        return {"status": "error", "message": str(e)}
