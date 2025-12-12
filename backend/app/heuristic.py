@@ -11,10 +11,14 @@ SUSPICIOUS_URL_LENGTH = 75
 URL_LENGTH_PENALTY = 10
 KEYWORD_PENALTY = 10
 NO_HTTPS_PENALTY = 15
-SUSPICIOUS_TLD_PENALTY = 25
+SUSPICIOUS_TLD_PENALTY = 85
 
 SUSPICIOUS_KEYWORDS = ['login', 'verify', 'update', 'account', 'banking', 'secure', 'signin', 'password']
-SUSPICIOUS_TLDS = ['.tk', '.ml', '.ga', '.cf', '.gq', '.xyz', '.top', '.work', '.click']
+SUSPICIOUS_TLDS = [
+    '.tk', '.ml', '.ga', '.cf', '.gq', '.xyz', '.top', '.work', '.click',
+    '.ink', '.site', '.info', '.club', '.live', '.buzz', '.online', '.vip',
+    '.bid', '.win', '.pro', '.loan', '.men', '.review', '.party', '.trade'
+]
 
 def score_url(url: str) -> dict:
     score = 0
@@ -33,8 +37,15 @@ def score_url(url: str) -> dict:
     # 1. IP Address Check (IPv4 and IPv6)
     # Remove port if present
     hostname = domain.split(':')[0]
+    
+    if hostname == 'localhost':
+        return {"score": 0, "reasons": ["Local development"]}
+
     try:
-        ipaddress.ip_address(hostname)
+        ip = ipaddress.ip_address(hostname)
+        if ip.is_private or ip.is_loopback:
+             return {"score": 0, "reasons": ["Local/Private IP Address"]}
+
         score += IP_ADDRESS_PENALTY
         reasons.append("IP address used as domain")
     except ValueError:
@@ -71,6 +82,25 @@ def score_url(url: str) -> dict:
     if subdomain_count > 3:
         score += 15
         reasons.append(f"Excessive subdomains ({subdomain_count})")
+
+    # 7. Domain Structure Check (Hyphens and Numbers)
+    # Extract SLD (Second Level Domain) e.g., 'google' from 'google.com'
+    parts = domain_lower.split('.')
+    if len(parts) >= 2:
+        sld = parts[-2]
+        
+        # Check for excessive hyphens
+        if sld.count('-') > 1:
+            score += 20
+            reasons.append("Suspicious usage of hyphens in domain")
+            
+        # Check for numeric suffix (e.g. 'paypal123') - Penalize ONLY if SLD is long (avoid false positives like 'news24')
+        if re.search(r'\d+$', sld):
+            if len(sld) > 10:
+                score += 55
+                reasons.append("Long domain ending with numbers (mimic pattern)")
+            else:
+                score += 10 # Minor penalty for short domains ending in numbers
 
     return {
         "score": min(100, score),

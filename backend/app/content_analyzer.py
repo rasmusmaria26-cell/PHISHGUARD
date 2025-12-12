@@ -1,4 +1,5 @@
 import joblib
+# Trigger reload for new model
 import os
 import re
 import logging
@@ -23,7 +24,9 @@ except (FileNotFoundError, EOFError, ValueError) as e:
 SUSPICIOUS_PHRASES = [
     "verify your account", "update your information", "confirm your identity",
     "your account has been suspended", "unauthorized login", "verify payment",
-    "urgent action required", "password expired", "enter your credentials"
+    "urgent action required", "password expired", "enter your credentials",
+    "package delivery", "delivery failure", "tracking number", "unsuccessful delivery",
+    "shipping address", "shipment pending", "payment declin", "account limit"
 ]
 
 def analyze_content(text: str) -> dict:
@@ -53,8 +56,13 @@ def analyze_content(text: str) -> dict:
     # If ML is available, it carries 80% weight. Keywords carry 20%.
     # If ML is missing, Keywords carry 100%.
     if LOADED_MODEL:
-        final_score = (ml_score * 0.8) + (keyword_score * 0.2)
-        method = "Hybrid (ML + Heuristic)"
+        # If Heuristic detected strong signals (>= 50), trust it over ML (which might fail on short text)
+        if keyword_score >= 50:
+             final_score = max(ml_score, keyword_score)
+             method = "Hybrid (Heuristic Priority)"
+        else:
+            final_score = (ml_score * 0.8) + (keyword_score * 0.2)
+            method = "Hybrid (ML Priority)"
     else:
         final_score = keyword_score
         method = "Heuristic Only"
@@ -79,11 +87,19 @@ def score_text_heuristic(text: str) -> Tuple[int, str]:
     verify_count = len(re.findall(r"\bverify\b", lower))
     password_count = len(re.findall(r"\bpassword\b", lower))
     urgent_count = len(re.findall(r"\burgent\b", lower))
+    delivery_count = len(re.findall(r"\bdelivery\b", lower))
+    suspend_count = len(re.findall(r"\bsuspend", lower))
+    package_count = len(re.findall(r"\bpackage", lower))
+    failure_count = len(re.findall(r"\bfailure", lower))
 
     count = len(hits)
     if verify_count > 1: count += 1
     if password_count > 0: count += 1
     if urgent_count > 0: count += 1
+    if delivery_count > 0: count += 1
+    if suspend_count > 0: count += 1
+    if package_count > 0: count += 1
+    if failure_count > 0: count += 1
 
     score = min(100, count * 25)
     note = ", ".join(hits) if hits else "No suspicious keywords"

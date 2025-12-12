@@ -16,7 +16,8 @@ class AnalyzeResponse(BaseModel):
     reasons: List[str]
     url_score: int
     content_score: int
-    visual_score: int = 0  # <--- Good to have this too
+    visual_score: int = 0
+    strategy: Optional[str] = None  # <--- Good to have this too
 
 class ReportRequest(BaseModel):
     url: str

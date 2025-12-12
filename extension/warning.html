@@ -304,30 +304,7 @@
         </div>
     </div>
 
-    <script>
-        // Extract URL from query parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const blockedUrl = urlParams.get('url') || 'Unknown URL';
-        const threatScore = urlParams.get('score') || '75';
-        const visualScore = urlParams.get('visual') || '0';
-
-        document.getElementById('blockedUrl').textContent = blockedUrl;
-        document.getElementById('threatScore').textContent = threatScore + '/100';
-        document.getElementById('visualMatch').textContent = visualScore > 0 ? visualScore : 'N/A';
-
-        function goBack() {
-            window.history.go(-2); // Go back 2 pages to skip the phishing site
-            setTimeout(() => {
-                window.location.href = 'about:blank';
-            }, 100);
-        }
-
-        function proceedAnyway() {
-            if (confirm('⚠️ WARNING: This page was flagged as a phishing attempt.\n\nProceeding may expose you to:\n• Identity theft\n• Financial fraud\n• Malware infection\n\nAre you absolutely sure you want to continue?')) {
-                window.location.href = blockedUrl;
-            }
-        }
-    </script>
+    <script src="warning.js"></script>
 </body>
 
 </html>

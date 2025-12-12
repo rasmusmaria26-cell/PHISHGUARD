@@ -20,6 +20,33 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Phishing Guard Backend")
 
+# Base directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Load Whitelist
+WHITELIST_FILE = os.path.join(BASE_DIR, "data", "whitelist.csv")
+TRUSTED_ROOTS = set()
+
+def load_whitelist():
+    global TRUSTED_ROOTS
+    if not os.path.exists(WHITELIST_FILE):
+        return
+    
+    try:
+        count = 0
+        with open(WHITELIST_FILE, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            next(reader, None) # Skip header
+            for row in reader:
+                if row and row[0].strip():
+                    TRUSTED_ROOTS.add(row[0].strip().lower())
+                    count += 1
+        logging.info(f"Loaded {count} domains into whitelist.")
+    except Exception as e:
+        logging.error(f"Failed to load whitelist: {e}")
+
+load_whitelist()
+
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
@@ -63,6 +90,45 @@ async def serve_dashboard():
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze(req: AnalyzeRequest):
     logger.info(f"Analyzing URL: {req.url}")
+
+    # --- GLOBAL WHITELIST ---
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(req.url)
+        hostname = parsed.hostname.lower() if parsed.hostname else ""
+        if hostname.startswith("www."): hostname = hostname[4:]
+        
+        # Using global TRUSTED_ROOTS loaded from CSV
+
+        if any(hostname == root or hostname.endswith("." + root) for root in TRUSTED_ROOTS):
+            logger.info(f"Whitelisted domain matched: {hostname}")
+            # Log to CSV before returning
+            try:
+                SCANS_FILE = os.path.join(BASE_DIR, "scans.csv")
+                file_exists = os.path.isfile(SCANS_FILE)
+                with open(SCANS_FILE, mode='a', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    if not file_exists:
+                        writer.writerow(["Timestamp", "URL", "Score", "Verdict", "Reasons", "Strategy"])
+                    writer.writerow([
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        req.url,
+                        0,
+                        "safe",
+                        "Trusted Platform",
+                        "Whitelist"
+                    ])
+            except Exception as e:
+                logger.error(f"CSV Log Error: {e}")
+
+            return AnalyzeResponse(
+                score=0, verdict="safe", reasons=["Verified trusted major platform"], 
+                url_score=0, content_score=0, visual_score=0, strategy="Whitelist",
+                request_id=req.request_id,
+                url=req.url
+            )
+    except Exception as e:
+        logger.warning(f"Whitelist check failed: {e}")
     
     url_res = score_url(req.url)
     url_score = url_res.get("score", 0)
@@ -74,7 +140,7 @@ async def analyze(req: AnalyzeRequest):
     visual_reason = None
     
     if req.screenshot:
-        vis_res = analyze_screenshot(req.screenshot, req.url)
+        vis_res = analyze_screenshot(req.screenshot, req.url, req.text)
         visual_score = vis_res.get("score", 0)
         logger.info(f"Visual check: Score={visual_score}, Reason={vis_res.get('reason')}")
         if vis_res.get("reason") and visual_score > 50:
@@ -85,7 +151,7 @@ async def analyze(req: AnalyzeRequest):
         logger.info("[VISUAL VETO] Reducing visual weight")
         visual_score = original_visual_score * 0.3
     
-    if url_score > 80:
+    if url_score > 60 or visual_score > 90 or content_score > 55:
         final_score = max(url_score, content_score, visual_score) 
     else:
         final_score = (url_score * 0.2) + (content_score * 0.5) + (visual_score * 0.3)

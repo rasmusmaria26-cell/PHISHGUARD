@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class LogoDetector:
     """YOLOv8-based logo detector for brand impersonation detection"""
     
-    def __init__(self, model_path: str = 'models/logo_detector.pt', confidence_threshold: float = 0.5):
+    def __init__(self, model_path: str = 'models/logo_detector_v2.pt', confidence_threshold: float = 0.5):
         """
         Initialize logo detector
         
@@ -136,7 +136,7 @@ class LogoDetector:
         return self.model_loaded
 
 
-# Global instance (lazy loaded)
+# Global instance (lazy loaded) - Model v2 Updated
 _detector_instance = None
 
 def get_detector() -> LogoDetector:

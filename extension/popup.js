@@ -365,6 +365,34 @@ function displayResult(data) {
   contentScore.textContent = data.content_score || 0;
   visualScore.textContent = data.visual_score || 0;
 
+  // Save to History & Update Counts
+  if (data.verdict === 'phishing') {
+    chrome.storage.local.get(['threats today'], (res) => {
+      const current = res['threats today'] || 0;
+      chrome.storage.local.set({ 'threats today': current + 1 });
+      // Update UI immediately
+      document.getElementById('threatsBlocked').textContent = (current + 1) + ' threats';
+      dailyScans.textContent = (parseInt(dailyScans.textContent) || 0) + 1;
+    });
+  } else {
+    dailyScans.textContent = (parseInt(dailyScans.textContent) || 0) + 1;
+  }
+
+  // Save to History Array
+  chrome.storage.local.get('history', (res) => {
+    const history = res.history || [];
+    const entry = {
+      url: tab.url,
+      timestamp: Date.now(),
+      score: data.score,
+      verdict: data.verdict,
+      reasons: data.reasons || []
+    };
+    const newHistory = [entry, ...history].slice(0, 20);
+    chrome.storage.local.set({ history: newHistory });
+    renderHistory(newHistory); // Refresh list immediately
+  });
+
   // Populate Details
   renderDetails(data);
 }
@@ -384,9 +412,14 @@ function renderDetails(data) {
 
   reasons.forEach(r => {
     const lower = r.toLowerCase();
-    if (lower.includes('url') || lower.includes('domain') || lower.includes('https') || lower.includes('ip address')) categories.url.push(r);
-    else if (lower.includes('visual') || lower.includes('mimic')) categories.visual.push(r);
-    else categories.content.push(r);
+    // Check specific prefixes and keywords to categorize correctly
+    if (lower.startsWith('visual') || lower.includes('logo') || lower.includes('cloned')) {
+      categories.visual.push(r);
+    } else if (lower.includes('url') || lower.includes('domain') || lower.includes('https') || lower.includes('ip address') || lower.includes('tld')) {
+      categories.url.push(r);
+    } else {
+      categories.content.push(r);
+    }
   });
 
   const createDetail = (type, items, icon, title, emptyMsg) => {

@@ -21,16 +21,18 @@ async function scanTab(tabId, rawUrl) {
     const url = rawUrl.split('#')[0];
 
     // Skip if recently scanned (simple debounce/cache)
-    if (scanCache.has(url)) {
-        const lastScan = scanCache.get(url);
-        if (Date.now() - lastScan < 30000) { // 30 seconds cache
-            console.log('Skipping recently scanned URL:', url);
-            return;
-        }
+    // Check persistent storage to prevent loops (Service Worker memory is ephemeral)
+    const storeKey = "scan_" + url;
+    const storageData = await chrome.storage.local.get(storeKey);
+    const lastScan = storageData[storeKey];
+
+    if (lastScan && (Date.now() - lastScan < 4000)) { // 4 seconds cache
+        console.log('Skipping recently scanned URL (Storage):', url);
+        return;
     }
 
-    // LOCK: Set cache immediately to prevent race conditions
-    scanCache.set(url, Date.now());
+    // LOCK: Set storage immediately
+    await chrome.storage.local.set({ [storeKey]: Date.now() });
     console.log('Initiating scan for:', url);
 
     try {
@@ -73,11 +75,12 @@ async function scanTab(tabId, rawUrl) {
             await incrementThreatCount();
         }
         updateBadge(tabId, data.verdict);
+        await saveToHistory(url, data);
 
         // If dangerous, redirect or warn
         if (data.score >= 75 || data.verdict === 'phishing') {
             const warningUrl = chrome.runtime.getURL("warning.html") +
-                `?score=${data.score}&verdict=${data.verdict}&ref=${encodeURIComponent(url)}`;
+                `?url=${encodeURIComponent(url)}&score=${data.score}&visual=${data.visual_score || 0}`;
             chrome.tabs.update(tabId, { url: warningUrl });
         }
 
@@ -137,4 +140,22 @@ function updateBadge(tabId, verdict) {
 
     chrome.action.setBadgeText({ text: text, tabId: tabId });
     chrome.action.setBadgeBackgroundColor({ color: color, tabId: tabId });
+}
+
+async function saveToHistory(url, result) {
+    const { history = [] } = await chrome.storage.local.get('history');
+
+    // Create new entry
+    const entry = {
+        url: url,
+        timestamp: Date.now(),
+        score: result.score,
+        verdict: result.verdict,
+        reasons: result.reasons || []
+    };
+
+    // Add to top, cap at 20
+    const newHistory = [entry, ...history].slice(0, 20);
+
+    await chrome.storage.local.set({ history: newHistory });
 }

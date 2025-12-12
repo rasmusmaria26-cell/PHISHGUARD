@@ -83,7 +83,7 @@ orb = cv2.ORB_create()
 # Load logos on module import
 load_reference_logos()
 
-def analyze_screenshot(base64_string: str, url: str) -> dict:
+def analyze_screenshot(base64_string: str, url: str, page_text: str = "") -> dict:
     try:
         # 1. Validate and Decode Image
         if not base64_string:
@@ -92,7 +92,7 @@ def analyze_screenshot(base64_string: str, url: str) -> dict:
         if "," in base64_string:
             base64_string = base64_string.split(",")[1]
         
-        # Size validation
+
         if len(base64_string) > MAX_IMAGE_SIZE:
             logger.warning("Image too large, rejecting")
             return {"score": 0, "verdict": "Error", "reason": "Image too large"}
@@ -132,14 +132,48 @@ def analyze_screenshot(base64_string: str, url: str) -> dict:
                                 "method": "YOLO"
                             }
                     
+                    # SAFETY VALVE: Trust Government & Education Domains
+                    # These TLDs are highly regulated and unlikely to host "Visual Clones" of commercial brands.
+                    trusted_tlds = ['.gov', '.edu', '.mil', '.ac.in', '.gov.in', '.nic.in']
+                    if any(tld in url_lower for tld in trusted_tlds):
+                        logger.info(f"Trusted TLD detected ({url}). Ignoring visual match for {brand}.")
+                        return {
+                            "score": 0,
+                            "verdict": "Safe",
+                            "reason": f"Trusted domain ({url_lower.split('.')[-1]}) verified.",
+                            "method": "YOLO (Trusted TLD)"
+                        }
+
                     # PHISHING: Brand detected but URL doesn't match
                     if brand_lower not in url_lower:
-                        return {
-                            "score": 95,
-                            "verdict": "Phishing",
-                            "reason": f"Visuals show '{brand}' (confidence: {confidence:.0%}) but URL is different",
-                            "method": "YOLO"
-                        }
+                        # Intent Analysis: Check for PHISHING-SPECIFIC threats (not just "Sign In")
+                        # We avoid common header terms like "Sign In", "Login", "Account" as they appear on Wikia/YouTube headers.
+                        sensitive_keywords = [
+                            'verify your', 'verify account', 'confirm password', 'update payment', 
+                            'billing information', 'security alert', 'unusual activity', 
+                            'account suspended', 'unlock account', 'confirm identity', 
+                            'enter password', 'enter credit', 'card number', 'expiration date'
+                        ]
+                        
+                        # Check text content for intent
+                        has_intent = any(k in page_text.lower() for k in sensitive_keywords)
+                        
+                        if has_intent:
+                            return {
+                                "score": 95,
+                                "verdict": "Phishing",
+                                "reason": "Suspicious visual branding + Phishing threats detected",
+                                "method": "YOLO"
+                            }
+                        else:
+                            # Strict Logic: If logo is found and URL is mismatch, treat as Phishing (95)
+                            # We trust the whitelist mechanism to protect legitimate sites.
+                            return {
+                                "score": 95,
+                                "verdict": "Phishing",
+                                "reason": f"Visuals mimic '{brand}' but URL is mismatched",
+                                "method": "YOLO"
+                            }
                     else:
                         return {
                             "score": 0,
